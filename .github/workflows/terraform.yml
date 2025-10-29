@@ -1,0 +1,47 @@
+name: Terraform (Akamai AppSec – connectivity)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+
+env:
+  TF_IN_AUTOMATION: "true"
+  AKAMAI_CLIENT_TOKEN:  ${{ secrets.AKAMAI_CLIENT_TOKEN }}
+  AKAMAI_CLIENT_SECRET: ${{ secrets.AKAMAI_CLIENT_SECRET }}
+  AKAMAI_ACCESS_TOKEN:  ${{ secrets.AKAMAI_ACCESS_TOKEN }}
+  AKAMAI_HOST:          ${{ secrets.AKAMAI_HOST }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Terraform fmt
+        run: terraform fmt -check
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: terraform plan -input=false -out=tfplan.out
+
+  apply:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+      - name: Terraform init
+        run: terraform init
+      - name: Terraform apply
+        run: terraform apply -auto-approve -input=false
